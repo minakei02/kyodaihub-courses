@@ -4,6 +4,7 @@
 
 - 配信ファイル: https://minakei02.github.io/kyodaihub-courses/courses.json
 - 出典: 京都大学「各授業の平均学生在籍数」（2021〜2025年度）。URL は `src/config.ts`
+- シラバスへのリンク: 京都大学 公開シラバスの一覧ページ（人がブラウザで保存したもの）から、部局・授業名・ページの場所だけを使う
 
 ## 仕組み
 
@@ -17,6 +18,8 @@ data/raw/*.csv ＋ data/fixes.csv（切れた名前などの手直し）
 docs/courses.json     … main ブランチの docs/ を GitHub Pages で公開
 ```
 
+シラバスの一覧ページ（`data/syllabus/{年度}.html`、人が保存）があれば、`npm run build` が `data/syllabus/{年度}.csv` を作り、一致する授業にシラバスのページの場所を付ける。
+
 対象は学部の授業と全学共通科目（国際高等教育院）。大学院の授業は入れていない。
 
 ## courses.json の形
@@ -25,11 +28,13 @@ docs/courses.json     … main ブランチの docs/ を GitHub Pages で公開
 {
   "version": 1,
   "source": { "title": "京都大学「各授業の平均学生在籍数」", "years": [2021, …], "urls": [ … ] },
+  "syllabus": { "year": 2026, "baseUrl": "https://www.k.kyoto-u.ac.jp/external/open_syllabus/" },
   "courses": [
     {
       "id": "90663cd47b90",            // 部局＋名前から決まる。毎年同じ
       "name": "線形代数学(講義・演義)A",
       "department": "全学共通科目",
+      "syllabus": ["la_syllabus?lectureNo=61447"],   // 一致したときだけ。複数クラスなら複数
       "stats": [                       // 新しい年度が先
         {
           "year": 2025,

@@ -1,6 +1,7 @@
 import { displayDepartment, isTargetDepartment } from './config.ts';
 import { courseId, normalizeDisplay, normalizeKey } from './normalize.ts';
 import type { Row } from './parse.ts';
+import type { SyllabusEntry } from './syllabus.ts';
 
 export type YearRows = { year: number; rows: Row[] };
 
@@ -29,7 +30,27 @@ export type FeedCourse = {
   department: string;
   /** 新しい年度が先 */
   stats: CourseYear[];
+  /**
+   * 公開シラバスのページの場所（feed.syllabus.baseUrl からの相対パス）。
+   * 部局と授業名が一致したものだけ。複数クラスある授業は複数並ぶ。一致しなければ入れない
+   */
+  syllabus?: string[];
 };
+
+/** シラバスの一覧（部局＋授業名）と一致する授業に、シラバスのページの場所を付ける */
+export function attachSyllabus(courses: FeedCourse[], entries: SyllabusEntry[]): FeedCourse[] {
+  const byKey = new Map<string, string[]>();
+  for (const entry of entries) {
+    const key = `${entry.department}|${normalizeKey(entry.name)}`;
+    const paths = byKey.get(key) ?? [];
+    if (!paths.includes(entry.path)) paths.push(entry.path);
+    byKey.set(key, paths);
+  }
+  return courses.map((course) => {
+    const paths = byKey.get(`${course.department}|${normalizeKey(course.name)}`);
+    return paths ? { ...course, syllabus: paths } : course;
+  });
+}
 
 function applyFixes(row: Row, fixes: Fix[]): Row {
   const fix = fixes.find(

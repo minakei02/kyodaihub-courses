@@ -2,3 +2,7 @@ node_modules/
 # 京大の PDF の置き場所（npm run extract が取ってくる）。リポジトリには入れない
 cache/
 .DS_Store
+# 人がブラウザで保存したシラバスの一覧ページ。京大のページそのものなのでリポジトリには入れず、
+# npm run build がここから作る data/syllabus/{年度}.csv（部局・授業名・ページの場所だけ）を入れる
+data/syllabus/*.html
+data/syllabus/*_files/

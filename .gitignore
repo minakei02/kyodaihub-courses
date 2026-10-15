@@ -1,0 +1,4 @@
+node_modules/
+# 京大の PDF の置き場所（npm run extract が取ってくる）。リポジトリには入れない
+cache/
+.DS_Store

@@ -1,0 +1,5 @@
+# PDF で名前が欄からあふれて切れている授業などを、全年度まとめて直す。
+# department は PDF のままの部局名、from は data/raw/*.csv に出ている名前、to は直した名前。
+# 例: 工学部,Structural Mechanics II and Exerci,Structural Mechanics II and Exercise
+department,from,to
+工学部,Structural Mechanics II and Exerci,Structural Mechanics II and Exercise

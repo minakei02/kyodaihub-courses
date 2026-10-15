@@ -1,0 +1,21 @@
+{
+  "name": "kyodaihub-courses",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "京都大学が公表している「各授業の平均学生在籍数」から、京大ポケット用の授業データ（courses.json）を作る",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "extract": "node src/extract.ts",
+    "build": "node src/build.ts",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "pdfjs-dist": "4.6.82",
+    "typescript": "^5.9.0"
+  }
+}

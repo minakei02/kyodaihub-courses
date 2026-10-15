@@ -35,20 +35,59 @@ export type FeedCourse = {
    * 部局と授業名が一致したものだけ。複数クラスある授業は複数並ぶ。一致しなければ入れない
    */
   syllabus?: string[];
+  /**
+   * syllabus と同じ順の、クラスを見分ける名前（「1T3」「単位未修得者クラス」、セミナーのテーマなど）。
+   * シラバス側の名前が「授業名＋空白＋記号」だったときだけ入る
+   */
+  syllabusLabels?: string[];
 };
 
-/** シラバスの一覧（部局＋授業名）と一致する授業に、シラバスのページの場所を付ける */
+/**
+ * シラバスの一覧と一致する授業に、シラバスのページの場所を付ける。
+ * 1. 部局と授業名（表記をそろえたもの）が完全に一致するもの
+ * 2. 1がなければ、同じ部局で「授業名＋空白＋クラスの記号」になっているもの（「英語リーディング 1T3」など）。
+ *    記号はボタンの名前に使う。「(演習)」のように括弧で続くものは別の授業なので含めない
+ */
 export function attachSyllabus(courses: FeedCourse[], entries: SyllabusEntry[]): FeedCourse[] {
-  const byKey = new Map<string, string[]>();
+  const exact = new Map<string, string[]>();
+  const byDepartment = new Map<string, { name: string; path: string }[]>();
   for (const entry of entries) {
     const key = `${entry.department}|${normalizeKey(entry.name)}`;
-    const paths = byKey.get(key) ?? [];
+    const paths = exact.get(key) ?? [];
     if (!paths.includes(entry.path)) paths.push(entry.path);
-    byKey.set(key, paths);
+    exact.set(key, paths);
+
+    const list = byDepartment.get(entry.department) ?? [];
+    list.push({ name: normalizeDisplay(entry.name), path: entry.path });
+    byDepartment.set(entry.department, list);
   }
+  // ほかの授業の名前とそのまま一致するシラバスは、その授業のものなので記号つきとしては使わない
+  const courseNames = new Set(courses.map((course) => `${course.department}|${normalizeKey(course.name)}`));
+
   return courses.map((course) => {
-    const paths = byKey.get(`${course.department}|${normalizeKey(course.name)}`);
-    return paths ? { ...course, syllabus: paths } : course;
+    const paths = exact.get(`${course.department}|${normalizeKey(course.name)}`);
+    if (paths) return { ...course, syllabus: paths };
+
+    const prefix = `${normalizeDisplay(course.name)} `;
+    const labeled = new Map<string, string>();
+    for (const entry of byDepartment.get(course.department) ?? []) {
+      if (!entry.name.startsWith(prefix)) continue;
+      const suffix = entry.name.slice(prefix.length);
+      if (/^[(（]/.test(suffix) || courseNames.has(`${course.department}|${normalizeKey(entry.name)}`)) continue;
+      const label = suffix.replace(/^[\s:：]+/, '').trim();
+      if (label && !labeled.has(entry.path)) labeled.set(entry.path, label);
+    }
+    if (labeled.size === 0) return course;
+
+    const sorted = [...labeled].sort((a, b) => a[1].localeCompare(b[1], 'ja', { numeric: true }));
+    // 同じ記号のシラバスが複数ある（前期・後期など）ときは、見分けられるよう2つ目から番号を付ける
+    const seen = new Map<string, number>();
+    const labels = sorted.map(([, label]) => {
+      const count = (seen.get(label) ?? 0) + 1;
+      seen.set(label, count);
+      return count === 1 ? label : `${label}（${count}）`;
+    });
+    return { ...course, syllabus: sorted.map(([path]) => path), syllabusLabels: labels };
   });
 }
 

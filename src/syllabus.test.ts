@@ -36,6 +36,41 @@ test('シラバス一覧: 保存したページの charset を見て文字にす
   assert.match(decodeSavedPage(utf8), /心理学/);
 });
 
+test('ひも付け: 「授業名＋空白＋クラスの記号」も同じ授業として、記号をボタンの名前にする', () => {
+  const course = (name: string): FeedCourse => ({
+    id: '000000000000',
+    name,
+    department: '全学共通科目',
+    stats: [{ year: 2025, variants: [{ registered: 10, earned: 9, classes: 1 }] }],
+  });
+  const entry = (name: string, lectureNo: number) => ({
+    department: '全学共通科目',
+    name,
+    path: `la_syllabus?lectureNo=${lectureNo}`,
+  });
+  const [reading, seminar] = attachSyllabus(
+    [course('英語リーディング'), course('ILASセミナー'), course('心理学')],
+    [
+      entry('英語リーディング 1T10', 3),
+      entry('英語リーディング 1T9', 2),
+      entry('英語リーディング 単位未修得者クラス', 4),
+      entry('ILASセミナー :エンジンの科学', 5),
+      entry('心理学 (演習)', 6),
+    ],
+  );
+  assert.deepEqual(reading.syllabusLabels, ['1T9', '1T10', '単位未修得者クラス']);
+  assert.deepEqual(reading.syllabus, ['la_syllabus?lectureNo=2', 'la_syllabus?lectureNo=3', 'la_syllabus?lectureNo=4']);
+  assert.deepEqual(seminar.syllabusLabels, ['エンジンの科学']);
+});
+
+test('ひも付け: 括弧で続く名前は別の授業なので、記号つきとして付けない', () => {
+  const [course] = attachSyllabus(
+    [{ id: '000000000000', name: '心理学', department: '文学部', stats: [] }],
+    [{ department: '文学部', name: '心理学 (演習)', path: 'department_syllabus?lectureNo=1&departmentNo=1' }],
+  );
+  assert.equal(course.syllabus, undefined);
+});
+
 test('ひも付け: 部局と名前（表記をそろえたもの）が一致する授業にだけ付ける', () => {
   const course = (department: string, name: string): FeedCourse => ({
     id: '000000000000',
